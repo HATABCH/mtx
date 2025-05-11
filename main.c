@@ -1,19 +1,21 @@
 #include "matrix.h"
-#include "matrix_operations.h"
 #include "matrix_manipulations.h"
+#include "matrix_operations.h"
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 
-void check_gauss_solution(const matrix_t *A, const matrix_t *X, const matrix_t *B, const char *title) {
+void check_gauss_solution(const matrix_t *A, const matrix_t *X,
+                          const matrix_t *B, const char *title) {
   printf("--- Проверка решения Гаусса для: %s ---\n", title);
-  
+
   if (!A || !X || !B) {
     printf("Ошибка: Передан указатель на NULL матрицу для проверки Гаусса.\n");
     return;
   }
 
-  if (A->rows != A->cols || A->rows != X->rows || X->cols != 1 || B->rows != A->rows || B->cols != 1) {
+  if (A->rows != A->cols || A->rows != X->rows || X->cols != 1 ||
+      B->rows != A->rows || B->cols != 1) {
     printf("Ошибка: Несоответствие размерностей матриц для проверки Гаусса.\n");
     return;
   }
@@ -56,6 +58,44 @@ void check_gauss_solution(const matrix_t *A, const matrix_t *X, const matrix_t *
   printf("--- Конец проверки ---\n\n");
 
   mtx_free(AX);
+}
+
+void test_matrix_exp() {
+  printf("\n--- Тест матричной экспоненты ---\n");
+
+  matrix_t *A = mtx_alloc(3, 3);
+  if (!A) {
+    printf("Ошибка выделения памяти для матрицы A\n");
+    return;
+  }
+
+  mtx_set_zero(A);
+  *mtx_ptr(A, 0, 0) = 1.0;
+  *mtx_ptr(A, 1, 1) = 2.0;
+  *mtx_ptr(A, 2, 2) = -1.0;
+
+  printf("Исходная матрица A:\n");
+  mtx_print(A);
+
+  matrix_t *exp_A = mtx_alloc(3, 3);
+  if (!exp_A) {
+    printf("Ошибка выделения памяти для exp(A)\n");
+    mtx_free(A);
+    return;
+  }
+
+  if (mtx_exp(A, exp_A) != 0) {
+    printf("Ошибка при вычислении матричной экспоненты\n");
+    mtx_free(A);
+    mtx_free(exp_A);
+    return;
+  }
+
+  printf("\nРезультат exp(A):\n");
+  mtx_print(exp_A);
+
+  mtx_free(A);
+  mtx_free(exp_A);
 }
 
 int main() {
@@ -252,6 +292,47 @@ int main() {
 
   mtx_free(aug);
   aug = NULL;
+
+  printf("\n--- Тест Гаусса ---\n");
+  matrix_t *perm_matrix = mtx_alloc(3, 4);
+  if (!perm_matrix) {
+    printf("Ошибка выделения памяти\n");
+    goto cleanup;
+  }
+
+  *mtx_ptr(perm_matrix, 0, 0) = 0;
+  *mtx_ptr(perm_matrix, 0, 1) = 0;
+  *mtx_ptr(perm_matrix, 0, 2) = 1;
+  *mtx_ptr(perm_matrix, 0, 3) = 1;
+  *mtx_ptr(perm_matrix, 1, 0) = 0;
+  *mtx_ptr(perm_matrix, 1, 1) = 1;
+  *mtx_ptr(perm_matrix, 1, 2) = 0;
+  *mtx_ptr(perm_matrix, 1, 3) = 2;
+  *mtx_ptr(perm_matrix, 2, 0) = 1;
+  *mtx_ptr(perm_matrix, 2, 1) = 0;
+  *mtx_ptr(perm_matrix, 2, 2) = 0;
+  *mtx_ptr(perm_matrix, 2, 3) = 3;
+
+  printf("Исходная матрица:\n");
+  mtx_print(perm_matrix);
+
+  if (mtx_gauss_elimination(perm_matrix) != 0) {
+    printf("Ошибка при выполнении метода Гаусса\n");
+    mtx_free(perm_matrix);
+    goto cleanup;
+  }
+
+  printf("\nМатрица после метода Гаусса:\n");
+  mtx_print(perm_matrix);
+
+  printf("\nРешение:\n");
+  printf("x1 = %.6f\n", *mtx_cptr(perm_matrix, 0, 3));
+  printf("x2 = %.6f\n", *mtx_cptr(perm_matrix, 1, 3));
+  printf("x3 = %.6f\n", *mtx_cptr(perm_matrix, 2, 3));
+
+  mtx_free(perm_matrix);
+
+  test_matrix_exp();
 
 cleanup:
   mtx_free(m1);

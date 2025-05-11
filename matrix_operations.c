@@ -194,6 +194,7 @@ int mtx_gauss_elimination(matrix_t *m) {
 
   size_t n = m->rows;
   size_t m_cols = m->cols;
+  double det = 1.0;
 
   for (size_t i = 0; i < n; ++i) {
     size_t max_row = i;
@@ -208,10 +209,11 @@ int mtx_gauss_elimination(matrix_t *m) {
     }
 
     if (max_val < EPSILON) {
-      return -1;
+      return -1; // Matrix is singular
     }
 
     if (max_row != i) {
+      det = -det; // Swap rows changes determinant sign
       for (size_t j = 0; j < m_cols; ++j) {
         double temp = *mtx_ptr(m, i, j);
         *mtx_ptr(m, i, j) = *mtx_ptr(m, max_row, j);
@@ -219,12 +221,19 @@ int mtx_gauss_elimination(matrix_t *m) {
       }
     }
 
+    det *= *mtx_cptr(m, i, i); // Multiply by diagonal element
+
     for (size_t j = i + 1; j < n; ++j) {
       double factor = *mtx_cptr(m, j, i) / *mtx_cptr(m, i, i);
       for (size_t k = i; k < m_cols; ++k) {
         *mtx_ptr(m, j, k) -= factor * *mtx_cptr(m, i, k);
       }
     }
+  }
+
+  // Check if determinant is too close to zero
+  if (fabs(det) < EPSILON) {
+    return -1;
   }
 
   for (int i = n - 1; i >= 0; --i) {
@@ -243,5 +252,101 @@ int mtx_gauss_elimination(matrix_t *m) {
     }
   }
 
+  return 0;
+}
+
+int mtx_mul3(matrix_t *result, const matrix_t *m1, const matrix_t *m2) {
+  if (!result || !m1 || !m2)
+    return -1;
+  if (m1->cols != m2->rows)
+    return -1;
+  if (result->rows != m1->rows || result->cols != m2->cols)
+    return -1;
+  if (m1->rows * m1->cols == 0 || m2->rows * m2->cols == 0)
+    return 0;
+  if (!m1->data || !m2->data || !result->data)
+    return -1;
+
+  // Initialize result to zero
+  mtx_set_zero(result);
+
+  for (size_t i = 0; i < m1->rows; ++i) {
+    for (size_t j = 0; j < m2->cols; ++j) {
+      double sum = 0.0;
+      for (size_t k = 0; k < m1->cols; ++k) {
+        double a = *mtx_cptr(m1, i, k);
+        double b = *mtx_cptr(m2, k, j);
+        sum += a * b;
+      }
+      *mtx_ptr(result, i, j) = sum;
+    }
+  }
+
+  return 0;
+}
+
+int mtx_exp(const matrix_t *m, matrix_t *result) {
+  if (!m || !result)
+    return -1;
+  if (m->rows != m->cols || result->rows != result->cols || m->rows != result->rows)
+    return -1;
+  if (m->rows * m->cols == 0)
+    return 0;
+  if (!m->data || !result->data)
+    return -1;
+
+  mtx_set_id(result);
+
+  matrix_t *temp = mtx_alloc(m->rows, m->cols);
+  if (!temp)
+    return -1;
+
+  matrix_t *power = mtx_copy(m);
+  if (!power) {
+    mtx_free(temp);
+    return -1;
+  }
+
+  double factorial = 1.0;
+  double term_norm = 0.0;
+  
+  for (int i = 1; i <= MTX_MAX_EXP_ITERATIONS; ++i) {
+    factorial *= i;
+    
+    if (mtx_scale(power, 1.0 / factorial) != 0) {
+      mtx_free(temp);
+      mtx_free(power);
+      return -1;
+    }
+    
+    term_norm = mtx_norm(power);
+    if (term_norm < EPSILON) {
+      break;
+    }
+    
+    if (mtx_add(result, power) != 0) {
+      mtx_free(temp);
+      mtx_free(power);
+      return -1;
+    }
+
+    if (mtx_mul3(temp, power, m) != 0) {
+      mtx_free(temp);
+      mtx_free(power);
+      return -1;
+    }
+
+    matrix_t *new_power = mtx_copy(temp);
+    if (!new_power) {
+      mtx_free(temp);
+      mtx_free(power);
+      return -1;
+    }
+    mtx_free(power);
+    power = new_power;
+  }
+
+  mtx_free(temp);
+  mtx_free(power);
   return 0;
 }
