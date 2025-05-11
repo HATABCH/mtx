@@ -209,11 +209,11 @@ int mtx_gauss_elimination(matrix_t *m) {
     }
 
     if (max_val < EPSILON) {
-      return -1; // Matrix is singular
+      return -1;
     }
 
     if (max_row != i) {
-      det = -det; // Swap rows changes determinant sign
+      det = -det;
       for (size_t j = 0; j < m_cols; ++j) {
         double temp = *mtx_ptr(m, i, j);
         *mtx_ptr(m, i, j) = *mtx_ptr(m, max_row, j);
@@ -221,7 +221,7 @@ int mtx_gauss_elimination(matrix_t *m) {
       }
     }
 
-    det *= *mtx_cptr(m, i, i); // Multiply by diagonal element
+    det *= *mtx_cptr(m, i, i);
 
     for (size_t j = i + 1; j < n; ++j) {
       double factor = *mtx_cptr(m, j, i) / *mtx_cptr(m, i, i);
@@ -231,7 +231,6 @@ int mtx_gauss_elimination(matrix_t *m) {
     }
   }
 
-  // Check if determinant is too close to zero
   if (fabs(det) < EPSILON) {
     return -1;
   }
@@ -267,7 +266,6 @@ int mtx_mul3(matrix_t *result, const matrix_t *m1, const matrix_t *m2) {
   if (!m1->data || !m2->data || !result->data)
     return -1;
 
-  // Initialize result to zero
   mtx_set_zero(result);
 
   for (size_t i = 0; i < m1->rows; ++i) {
@@ -288,7 +286,8 @@ int mtx_mul3(matrix_t *result, const matrix_t *m1, const matrix_t *m2) {
 int mtx_exp(const matrix_t *m, matrix_t *result) {
   if (!m || !result)
     return -1;
-  if (m->rows != m->cols || result->rows != result->cols || m->rows != result->rows)
+  if (m->rows != m->cols || result->rows != result->cols ||
+      m->rows != result->rows)
     return -1;
   if (m->rows * m->cols == 0)
     return 0;
@@ -309,21 +308,21 @@ int mtx_exp(const matrix_t *m, matrix_t *result) {
 
   double factorial = 1.0;
   double term_norm = 0.0;
-  
+
   for (int i = 1; i <= MTX_MAX_EXP_ITERATIONS; ++i) {
     factorial *= i;
-    
+
     if (mtx_scale(power, 1.0 / factorial) != 0) {
       mtx_free(temp);
       mtx_free(power);
       return -1;
     }
-    
+
     term_norm = mtx_norm(power);
     if (term_norm < EPSILON) {
       break;
     }
-    
+
     if (mtx_add(result, power) != 0) {
       mtx_free(temp);
       mtx_free(power);
