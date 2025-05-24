@@ -4,10 +4,12 @@
 #include <stdlib.h>
 
 int mtx_transpose(matrix_t *m) {
-  if (!m || !m->data)
+  if (!m)
     return -1;
-  if (m->rows == 0 || m->cols == 0)
+  if (m->rows * m->cols == 0)
     return 0;
+  if (!m->data)
+    return -1;
 
   matrix_t *temp = mtx_alloc(m->cols, m->rows);
   if (!temp)

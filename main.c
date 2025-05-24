@@ -6,6 +6,10 @@
 #include <stdlib.h>
 
 void check_gauss_solution(const matrix_t *A, const matrix_t *X,
+                          const matrix_t *B, const char *title);
+void test_matrix_exp(void);
+
+void check_gauss_solution(const matrix_t *A, const matrix_t *X,
                           const matrix_t *B, const char *title) {
   printf("--- Проверка решения Гаусса для: %s ---\n", title);
 
@@ -60,7 +64,7 @@ void check_gauss_solution(const matrix_t *A, const matrix_t *X,
   mtx_free(AX);
 }
 
-void test_matrix_exp() {
+void test_matrix_exp(void) {
   printf("\n--- Тест матричной экспоненты ---\n");
 
   matrix_t *A = mtx_alloc(3, 3);
@@ -98,7 +102,7 @@ void test_matrix_exp() {
   mtx_free(exp_A);
 }
 
-int main() {
+int main(void) {
   matrix_t *m1 = mtx_alloc(3, 3);
   matrix_t *m2 = mtx_alloc(3, 3);
   matrix_t *m_copy = NULL;
